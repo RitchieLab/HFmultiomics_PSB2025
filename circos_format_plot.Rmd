@@ -53,7 +53,7 @@ col.genes.ns <- "lightgray"
 
 
 ################################################################################
-#                               loading zone                                   #
+#                               loading                                       #
 ################################################################################
 ```{r}
 load(gene.path)
@@ -71,7 +71,7 @@ dim(twas_gr5)
 
 ```
 ################################################################################
-#                               circos circus                                  #
+#                               circos                                        #
 ################################################################################
 ```{r}
 png(file.path("circos.png"),  
@@ -250,73 +250,6 @@ draw(legend1, x = unit(4, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
 draw(legend4, x = unit(80, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
 draw(legend3, x = unit(90, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
 draw(legend2, x = unit(108, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
-
-# Just for testing
-# dev.off()
-# heterozygosity plot
-# I think she used -log10 of Cochran p-value not the I value
-# this line below should be commented out once the data is processed correctly,
-# i.e. either changed to be p-value or filtered (or both)
-#het.data <- sample_n(het.data, size = 100)
-# circos.genomicTrack(het.data_AFR,
-#                     stack = TRUE, 
-#                     panel.fun = function(region, value, ...) {
-#                       circos.genomicPoints(region, 
-#                                            value, 
-#                                            col = col.het.pch,
-#                                            pch = 16, 
-#                                            #cex = value[[1]]/100,
-#                                            cex = value[[1]]/75,
-#                                            #cex = value[[1]]/50,
-#                                             ...)
-#                       i = getI(...)
-#                       cell.xlim = get.cell.meta.data("cell.xlim")
-#                       # circos.lines(cell.xlim, c(i, i), lty = 2, col = "#FFFFFF")
-#                       },
-#                     track.height = 0.05,
-#                     bg.border = NA,
-#                     bg.col = col.het.bg)
-# circos.yaxis(side = "left",
-#              at = ceiling(max(het.data_AFR$value1)/100), # midpoint where 100 = 2*50 (divisor from cex)
-#              labels = expression(),
-#              #labels = expression(AFR),
-#              #labels = expression(P[het]),
-#              labels.cex = 0.3, # Increased from 0.3 --> 0.4
-#              sector.index = get.all.sector.index()[1],
-#              lwd = 0.3,
-#              tick = FALSE) 
-# 
-# # EUR
-# circos.genomicTrack(het.data_EUR,
-#                     stack = TRUE, 
-#                     panel.fun = function(region, value, ...) {
-#                       circos.genomicPoints(region, 
-#                                            value, 
-#                                            col = col.het2.pch,
-#                                            pch = 16, 
-#                                            #cex = value[[1]]/100,
-#                                            cex = value[[1]]/75,
-#                                            #cex = value[[1]]/50,
-#                                            ...)
-#                       i = getI(...)
-#                       cell.xlim = get.cell.meta.data("cell.xlim")
-#                       # circos.lines(cell.xlim, c(i, i), lty = 2, col = "#FFFFFF")
-#                     },
-#                     track.height = 0.05,
-#                     bg.border = NA,
-#                     bg.col = col.het2.bg)
-# circos.yaxis(side = "left",
-#              at = ceiling(max(het.data_EUR$value1)/100), # midpoint where 100 = 2*50 (divisor from cex)
-#              labels = expression(),
-#              #labels = expression(EUR),
-#              #labels = expression(P[het]),
-#              labels.cex = 0.3, # Increased from 0.3 --> 0.4
-#              sector.index = get.all.sector.index()[1],
-#              lwd = 0.3,
-#              tick = FALSE) 
-
-
-
 
 dev.off()
 ```
