@@ -1,0 +1,322 @@
+---
+title: "make_circos.CMVD"
+author: "Tess Cherlin"
+date: "2023-08-17"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# readme: make inner scatterplot for circlize plot
+
+rm(list = ls())
+
+library(dplyr)
+library(circlize)
+```
+
+################################################################################
+#                                 variables                                    #
+################################################################################
+```{r}
+# inputs 
+gene.path <- file.path("", "gene_track_data_hfm")
+man.path <- file.path("", "manhattan_data_hfm")
+twas.path <- file.path("", "twas_data_hfm")
+pwas.path <- file.path("", "pwas_data_hfm")
+```
+
+```{r}
+# outputs
+plot.out <- file.path("circlize_plot.png") 
+```
+
+```{r}
+# plot variables
+gwas.line <- -log10(5e-8)
+twas.line <- -log10(3.814e-7)
+pwas.line <- -log10(3.75e-5)
+col.known.genes <- "#0072B2" # known gene labels
+col.novel.genes <- "#D55E00" # unknown gene labels
+col.het.bg <- "#B3E2D5" # background for heterozygosity track
+col.het.pch <- "darkred" # points for heterozygosity track
+col.het2.bg <- "#E6E6FA" # background for heterozygosity track
+col.het2.pch <- "darkblue" # points for heterozygosity track
+col.genes.ns <- "lightgray"
+# colors for manhattan plot points set in data format function
+```
+
+
+################################################################################
+#                               loading zone                                   #
+################################################################################
+```{r}
+load(gene.path)
+load(man.path)
+load(pwas.path)
+load(twas.path)
+
+# want to make the twas value1 upside-down
+#twas_gr5$value1 <- twas_gr5$value1*(-1)
+
+dim(genes.bed)
+dim(mega.bed_gr)
+dim(pwas_gr5)
+dim(twas_gr5)
+
+```
+################################################################################
+#                               circos circus                                  #
+################################################################################
+```{r}
+png(file.path("circos.png"),  
+    width = 5,
+    height= 5.5,
+    units = "in",
+    res = 1200)
+
+circos.clear()
+
+circos.par("start.degree" = 90, # set circos parameters
+           gap.degree = c(rep(1, 21), 8), # small gap between chrs + larger for axis
+           track.margin = c(0.005, 0.005), # remove the spaces between the tracks
+           cell.padding = c(0.001, 0.01, 0.01, 0.001))
+
+# initialize a genomics template
+circos.initializeWithIdeogram(plotType = NULL,         
+                              species = "hg38", 
+                              chromosome.index = paste0("chr", c(1:22)))
+
+
+circos.genomicLabels(genes.bed,
+                     labels.column = 4,
+                     side = "outside",
+                     cex = 0.25, # Decreased from 0.3 --> 0.2
+                     line_lwd = 0.8,
+                     connection_height = convert_height(4, "mm"), # increased from 3 to 4
+                     #line_col = "blue",
+                     #col = "blue")
+                     line_col =  ifelse(genes.bed$group == "gene", col.het.pch, ifelse(genes.bed$group == "protein", col.het2.pch, ifelse(genes.bed$group == "both", "purple", "lightgray"))),
+                     col =  ifelse(genes.bed$group == "gene", col.het.pch, ifelse(genes.bed$group == "protein", col.het2.pch, ifelse(genes.bed$group == "both", "purple", "lightgray"))))
+
+# chromosome track
+circos.track(ylim = c(0, 1),                       
+             panel.fun = function(x, y) {
+               chr  = gsub("chr", CELL_META$sector.index, replace = "")
+               xlim = CELL_META$xlim
+               ylim = CELL_META$ylim
+               circos.rect(xlim[1], 0, xlim[2], 1, 
+                           col = "white", 
+                           cex = 0.2,  # Increased from 0.2 --> 0.3
+                           lwd = 0.5 ) # thinner box outline
+               circos.text(mean(xlim), mean(ylim), 
+                           chr, 
+                           cex = 0.4, 
+                           col = "black",
+                           facing = "inside", 
+                           niceFacing = TRUE)
+             }, 
+             track.height = 0.03, 
+             bg.border = NA)
+#test = mega.bed_gr[mega.bed_gr$value1>1,]
+# manhattan plot
+circos.genomicTrack(mega.bed_gr,
+#circos.genomicTrack(mega.bed_gr[mega.bed_gr$value1>1,],
+                    # ylim = c(0, 30),
+                    ylim = c(floor(min(mega.bed_gr$value1)),
+                           ceiling(max(mega.bed_gr$value1))),
+                    panel.fun = function(region, value, ...) {
+                      circos.genomicPoints(region, 
+                                           value, 
+                                           numeric.column = 1,
+                                           col = "black",
+                                           #col = value[, 2],
+                                           pch = 16, 
+                                           cex = 0.3, ...)
+                      i = getI(...)
+                      cell.xlim = get.cell.meta.data("cell.xlim")
+                      circos.lines(cell.xlim, c(gwas.line, gwas.line),
+                                   lty = 2, col = "#D55E00")
+                    },
+                    track.height = 0.18,
+                    bg.border = NA,
+                    bg.col = "gray96")
+circos.yaxis(side = "left",                 
+             at = c(floor(min(mega.bed_gr$value1)), 
+                    10, 20, 30, 40, 50, 60, 70, 80, 90),
+             labels = c("", 10, 20, 30, 40, 50, 60, 70, 80, 90),
+              #labels = c(floor(min(mega.bed$value1)), 
+               #         10, 20, 30),
+             sector.index = get.all.sector.index()[1],
+             labels.cex = 0.4, # Increased from 0.3 --> 0.4
+             lwd = 0.3, 
+             tick.length = 0.5*(convert_x(1, "mm", 
+                                          get.cell.meta.data("sector.index"), 
+                                          get.cell.meta.data("track.index"))))
+
+# TWAS manhattan plot
+circos.genomicTrack(twas_gr5,
+                    ylim = c(floor(min(twas_gr5$value1)),
+                           ceiling(max(twas_gr5$value1))),
+                    panel.fun = function(region, value, ...) {
+                      circos.genomicPoints(region,
+                                           value,
+                                           numeric.column = 1,
+                                           col = value$value2,
+                                           pch = 16,
+                                           cex = 0.5, ...)
+                      i = getI(...)
+                      cell.xlim = get.cell.meta.data("cell.xlim")
+                      circos.lines(cell.xlim, c(-twas.line, -twas.line),
+                                   lty = 2, col = "#D55E00")
+                    },
+                    track.height = 0.18,
+                    bg.border = NA,
+                    bg.col = "gray96")
+circos.yaxis(side = "left",
+             at = c(floor(min(twas_gr5$value1)),
+                    -10, -20, -30, -40, -50),
+             labels = c("", 10, 20, 30, 40, 50),
+             #labels = c(floor(min(mega.bed$value1)),
+             #         10, 20, 30),
+             sector.index = get.all.sector.index()[1],
+             labels.cex = 0.4, # Increased from 0.3 --> 0.4
+             lwd = 0.3,
+             tick.length = 0.5*(convert_x(1, "mm",
+                                          get.cell.meta.data("sector.index"),
+                                          get.cell.meta.data("track.index"))))
+
+# PWAS manhattan plot
+circos.genomicTrack(pwas_gr5,
+                    ylim = c(-10, 0),
+                    panel.fun = function(region, value, ...) {
+                      circos.genomicPoints(region,
+                                           value,
+                                           numeric.column = 1,
+                                           col = value$value2,
+                                           pch = 16,
+                                           cex = 0.5, ...)
+                      i = getI(...)
+                      cell.xlim = get.cell.meta.data("cell.xlim")
+                      circos.lines(cell.xlim, c(-pwas.line, -pwas.line),
+                                   lty = 2, col = "#D55E00")
+                    },
+                    track.height = 0.18,
+                    bg.border = NA,
+                    bg.col = "gray96")
+circos.yaxis(side = "left",
+             at = c(floor(min(pwas_gr5$value1)),
+                    -2, -4, -6, -8, -10),
+             labels = c("", 2, 4, 6, 8, 10),
+             #labels = c(floor(min(mega.bed$value1)),
+             #         10, 20, 30),
+             sector.index = get.all.sector.index()[1],
+             labels.cex = 0.4, # Increased from 0.3 --> 0.4
+             lwd = 0.3,
+             tick.length = 0.5*(convert_x(1, "mm",
+                                          get.cell.meta.data("sector.index"),
+                                          get.cell.meta.data("track.index"))))
+
+legend1 = Legend(labels = c("TWAS", "PWAS", "Both"),
+                 title = "Annotation", type = "points",
+                 legend_gp = gpar(col = c(col.het.pch, col.het2.pch, "purple")),
+                 labels_gp = gpar(fontsize = 3),
+                 title_gp = gpar(fontsize = 4))
+
+legend2 = Legend(labels = c("Artery_Tibial", "Adipose_Subcutaneous", "Kidney_Cortex", "Adipose_Visceral_Omentum", "Liver", "Artery_Aorta", "Heart_Atrial_Appendage", "Whole_Blood", "Heart_Left_Ventricle", "Artery_Coronary"),
+                 title = "TWAS Tissues", type = "points",
+                 legend_gp = gpar(col = c("darkred", "magenta", "orange", "white", "#FFC107", "darkgreen", "red", "maroon","pink", "purple")),
+                 labels_gp = gpar(fontsize = 3),
+                 title_gp = gpar(fontsize = 4))
+
+legend3 = Legend(labels = c("EA", "AA"),
+                 title = "PWAS Models", type = "points",
+                 legend_gp = gpar(col = c("darkblue", "lightblue")),
+                 labels_gp = gpar(fontsize = 3),
+                 title_gp = gpar(fontsize = 4))
+
+legend4 = Legend(labels = c(""),
+                 title = "GWAS", type = "points",
+                 legend_gp = gpar(col = c("black")),
+                 labels_gp = gpar(fontsize = 3),
+                 title_gp = gpar(fontsize = 4))
+
+draw(legend1, x = unit(4, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
+draw(legend4, x = unit(80, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
+draw(legend3, x = unit(90, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
+draw(legend2, x = unit(108, "mm"), y = unit(1, "mm"), just = c("left", "bottom"))
+
+# Just for testing
+# dev.off()
+# heterozygosity plot
+# I think she used -log10 of Cochran p-value not the I value
+# this line below should be commented out once the data is processed correctly,
+# i.e. either changed to be p-value or filtered (or both)
+#het.data <- sample_n(het.data, size = 100)
+# circos.genomicTrack(het.data_AFR,
+#                     stack = TRUE, 
+#                     panel.fun = function(region, value, ...) {
+#                       circos.genomicPoints(region, 
+#                                            value, 
+#                                            col = col.het.pch,
+#                                            pch = 16, 
+#                                            #cex = value[[1]]/100,
+#                                            cex = value[[1]]/75,
+#                                            #cex = value[[1]]/50,
+#                                             ...)
+#                       i = getI(...)
+#                       cell.xlim = get.cell.meta.data("cell.xlim")
+#                       # circos.lines(cell.xlim, c(i, i), lty = 2, col = "#FFFFFF")
+#                       },
+#                     track.height = 0.05,
+#                     bg.border = NA,
+#                     bg.col = col.het.bg)
+# circos.yaxis(side = "left",
+#              at = ceiling(max(het.data_AFR$value1)/100), # midpoint where 100 = 2*50 (divisor from cex)
+#              labels = expression(),
+#              #labels = expression(AFR),
+#              #labels = expression(P[het]),
+#              labels.cex = 0.3, # Increased from 0.3 --> 0.4
+#              sector.index = get.all.sector.index()[1],
+#              lwd = 0.3,
+#              tick = FALSE) 
+# 
+# # EUR
+# circos.genomicTrack(het.data_EUR,
+#                     stack = TRUE, 
+#                     panel.fun = function(region, value, ...) {
+#                       circos.genomicPoints(region, 
+#                                            value, 
+#                                            col = col.het2.pch,
+#                                            pch = 16, 
+#                                            #cex = value[[1]]/100,
+#                                            cex = value[[1]]/75,
+#                                            #cex = value[[1]]/50,
+#                                            ...)
+#                       i = getI(...)
+#                       cell.xlim = get.cell.meta.data("cell.xlim")
+#                       # circos.lines(cell.xlim, c(i, i), lty = 2, col = "#FFFFFF")
+#                     },
+#                     track.height = 0.05,
+#                     bg.border = NA,
+#                     bg.col = col.het2.bg)
+# circos.yaxis(side = "left",
+#              at = ceiling(max(het.data_EUR$value1)/100), # midpoint where 100 = 2*50 (divisor from cex)
+#              labels = expression(),
+#              #labels = expression(EUR),
+#              #labels = expression(P[het]),
+#              labels.cex = 0.3, # Increased from 0.3 --> 0.4
+#              sector.index = get.all.sector.index()[1],
+#              lwd = 0.3,
+#              tick = FALSE) 
+
+
+
+
+dev.off()
+```
