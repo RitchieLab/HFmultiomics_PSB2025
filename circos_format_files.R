@@ -29,31 +29,6 @@ format_genes <- function(data){
 }
 
 
-
-#' #' Formats data for heterozygosity track
-#' #' @param data data.frame containing meta analysis output
-#' format_het <- function(data){
-#'   
-#'   data <- as.data.frame(data)
-#'   
-#'   data$end <- data$BP + 1
-#'   
-#'   data.het <- data[, c("CHR", "BP", "end", "I")]
-#'   
-#'   names(data.het) <- c("chr", "start", "end", "value1")
-#'   
-#'   data.het$chr <- paste0("chr", data.het$chr)
-#'   
-#'   return(data.het)
-#' }
-
-#' Formats data for Manhattan plot
-#' @param data data.frame containing meta analysis output
-#' @param annotation data.frame containing annotations
-#' @param p.threshold p-value to filter out
-
-#data = mega.data2 # for testing
-#annotations = anno.data2 # for testing
 format_manhattan <- function (data, annotations, 
                              p.threshold,
                              col = "black",
@@ -98,10 +73,6 @@ pwas.out <- file.path("", "pwas_data_hfm")
 ################################################################################
 #                               loading zone                                   #
 ################################################################################
-
-# #mega.data <- data.table::fread(mega.path)
-# mega.data2 <- data.table::fread(pheno.path)
-# colnames(mega.data2) <- gsub("#", "", colnames(mega.data2))
 
 # Load the data for the GWAS annotation
 gwas.data <- data.table::fread(gwas.path)
@@ -150,7 +121,6 @@ save(mega.bed_gr, file = manhattan.out)
 ################################################################################
 #                              format for twas                              #
 ################################################################################
-# twas_gr = twas.data[grep("global_reserve", twas.data$phenotype),]
 # p-value threshold
 twas_gr = twas.data[twas.data$pvalue<=0.05,]
 twas_gr4 = twas_gr[,c("gene_name_x", "Tissue", "pvalue", "gene_chr", "gene_start")]
@@ -180,7 +150,6 @@ save(twas_gr5, file = twas.out)
 ################################################################################
 #                              format for pwas                              #
 ################################################################################
-# pheno = ""
 # pwas_gr = pwas.data[grep(pheno, pwas.data$phenotype),]
 # p-value threshold
 pwas_gr = pwas.data[pwas.data$pvalue<=1,]
