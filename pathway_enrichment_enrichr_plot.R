@@ -73,7 +73,7 @@ for (file in files) {
   filtered_df <- combined_df %>% filter(pvalue < 0.05)
   filtered_df <- filtered_df %>% filter(CombinedScore > 90)
   
-  filt_file <- sprintf("~/Desktop/Thesis_Work/Projects/CARDIO_WAS/enrichr/%s_filtered_pathways.csv", file)
+  filt_file <- sprintf("%s_filtered_pathways.csv", file)
   write.csv(filtered_df, filt_file)
     
   plot <- ggplot(head(filtered_df, 20), aes(x = CombinedScore, y = reorder(Pathway, log10_pvalue), 
